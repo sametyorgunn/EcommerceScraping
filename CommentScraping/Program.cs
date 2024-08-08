@@ -1,4 +1,4 @@
-﻿//using System;
+﻿//using System;.
 //using System.Net.Http;
 //using System.Threading.Tasks;
 //using HtmlAgilityPack;
@@ -46,6 +46,7 @@
 
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
 
 class Program
@@ -54,7 +55,7 @@ class Program
     {
         // ChromeDriver için tarayıcı seçeneklerini ayarlayın
         var options = new ChromeOptions();
-        /*options.AddArgument("--headless");*/  // Tarayıcıyı arka planda çalıştırmak için (görünmez)
+        //options.AddArgument("--headless");
 
 
         Console.WriteLine("Ürün ismi giriniz....");
@@ -67,31 +68,70 @@ class Program
             searchInput.SendKeys(seacrWord);
             Thread.Sleep(1000);
             searchInput.SendKeys(Keys.Enter);
-            //var products = driver.FindElements(By.ClassName("p-card-wrppr"));
             var productLink =driver.FindElements(By.CssSelector("div.p-card-wrppr a"));
+            List<Product> urunler = new List<Product>();
+            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
 
             foreach ( var product in productLink)
             {
-                //product.SendKeys(Keys.Enter);
-                //Thread.Sleep(3000);
-                //IWebElement rating = driver.FindElement(By.ClassName("rvw-cnt-tx"));
-                //rating.Click();
 
                 string originalWindow = driver.CurrentWindowHandle;
-                product.Click();
-               
+                Thread.Sleep(1000);
+                try
+                {
+                    product.Click();
+                }
+                catch (Exception ex)
+                {
+                    product.SendKeys(Keys.Escape); // Escape tuşuna bas
+                }
+                // Yeni pencereye geçiş yapın
                 var windowHandles = driver.WindowHandles;
                 driver.SwitchTo().Window(windowHandles[1]);
-                IWebElement rating = driver.FindElement(By.ClassName("rvw-cnt-tx"));
-                rating.Click();
-                var element = driver.FindElements(By.ClassName("comment-text"));
-                foreach (var elemt in element)
+                try
                 {
-                    Console.WriteLine(elemt.Text);
+                    // Değerlendirme bağlantısını bulun ve tıklayın
+                    Thread.Sleep(1000);
+                    IWebElement rating =driver.FindElement(By.ClassName("rvw-cnt-tx"));
+                    Thread.Sleep(1000);
+                    rating.Click();
+
+                    // Yorumları çekin
+                    var elements = driver.FindElements(By.ClassName("comment-text"));
+
+                    Product uruns = new Product
+                    {
+                        ProductName = seacrWord,
+                        Comment = new List<Comment>()
+                    };
+                    foreach (var element in elements)
+                    {
+                        uruns.Comment.Add(new Comment { CommentText = element.Text });
+                    }
+                    urunler.Add(uruns);
                 }
+                catch (NoSuchElementException)
+                {
+                    Console.WriteLine("Değerlendirme bağlantısı bulunamadı.");
+                }
+
+                // Yeni pencereyi kapatın ve eski pencereye geri dönün
+                driver.Close();
+                driver.SwitchTo().Window(originalWindow);
             }
           
         
         }
+        Console.ReadLine();
     }
+}
+
+public class Product
+{
+    public string ProductName { get; set; }
+    public List<Comment> Comment { get; set; }
+}
+public class Comment
+{
+    public string CommentText { get; set; }
 }
