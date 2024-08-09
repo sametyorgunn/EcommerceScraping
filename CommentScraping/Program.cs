@@ -1,4 +1,6 @@
-﻿using OpenQA.Selenium;
+﻿using CommentScraping;
+using CommentScraping.Model;
+using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
@@ -23,7 +25,7 @@ class Program
             Thread.Sleep(1000);
             searchInput.SendKeys(Keys.Enter);
            
-            var productLink = driver.FindElements(By.CssSelector("div.p-card-wrppr a")).Take(10).ToList();
+            var productLink = driver.FindElements(By.CssSelector("div.p-card-wrppr a")).Take(5).ToList();
             List<Product> urunler = new List<Product>();
             WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
             var count = 0;
@@ -72,26 +74,18 @@ class Program
                 driver.Close();
                 driver.SwitchTo().Window(originalWindow);
             }
-
-            foreach (var i in urunler)
+            var analyse = new EmotionalAnalyse();
+            var comments = urunler.SelectMany(x => x.Comment).ToList();
+            var analyseResult = analyse.Analyze(comments);
+            
+            foreach(var res in analyseResult)
             {
-                foreach(var element in i.Comment)
-                {
-                    Console.WriteLine($"ürün:{i.ProductName} ---- yorum: {element.CommentText}");
-                }
+                Console.WriteLine($"yorum: {res.CommentText} --- {(res.Prediction ? "olumlu" : "olumsuz")}");
             }
+
 
         }
         Console.ReadLine();
     }
 }
 
-public class Product
-{
-    public string ProductName { get; set; }
-    public List<Comment> Comment { get; set; }
-}
-public class Comment
-{
-    public string CommentText { get; set; }
-}
