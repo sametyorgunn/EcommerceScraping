@@ -1,50 +1,4 @@
-﻿//using System;.
-//using System.Net.Http;
-//using System.Threading.Tasks;
-//using HtmlAgilityPack;
-
-//class Program
-//{
-//    static async Task Main(string[] args)
-//    {
-//        //var url = "https://asrekagit.com/";
-//        //var httpClient = new HttpClient();
-//        //var response = await httpClient.GetStringAsync(url);
-
-//        //var htmlDoc = new HtmlDocument();
-//        //htmlDoc.LoadHtml(response);
-
-//        //// Yorumları çekmek için doğru XPath ifadesini bulun
-//        //var comments = htmlDoc.DocumentNode.SelectNodes("//span[@class='thumb-info-inner line-height-1 font-weight-bold text-dark position-relative top-3']");
-
-//        //if (comments != null)
-//        //{
-
-//        //        Console.WriteLine(comments);
-
-//        //}
-
-
-//        var url = "https://www.trendyol.com/";
-//        var httpClient = new HttpClient();
-//        var response = await httpClient.GetStringAsync(url);
-
-//        var htmlDoc = new HtmlDocument();
-//        htmlDoc.LoadHtml(response);
-
-//        // Yorumları çekmek için doğru XPath ifadesini bulun
-//        var comments = htmlDoc.DocumentNode.SelectNodes("//div[@class='widget-product']");
-
-//        if (comments != null)
-//        {
-
-//            Console.WriteLine(comments);
-
-//        }
-//    }
-//}
-
-using OpenQA.Selenium;
+﻿using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
@@ -68,35 +22,34 @@ class Program
             searchInput.SendKeys(seacrWord);
             Thread.Sleep(1000);
             searchInput.SendKeys(Keys.Enter);
-            var productLink =driver.FindElements(By.CssSelector("div.p-card-wrppr a"));
+           
+            var productLink = driver.FindElements(By.CssSelector("div.p-card-wrppr a")).Take(10).ToList();
             List<Product> urunler = new List<Product>();
             WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-
+            var count = 0;
             foreach ( var product in productLink)
             {
 
                 string originalWindow = driver.CurrentWindowHandle;
-                Thread.Sleep(1000);
                 try
                 {
                     product.Click();
                 }
                 catch (Exception ex)
                 {
-                    product.SendKeys(Keys.Escape); // Escape tuşuna bas
+                    Actions actions = new Actions(driver);
+                    actions.MoveByOffset(10, 100).Click().Perform();
+                    product.Click();
                 }
-                // Yeni pencereye geçiş yapın
                 var windowHandles = driver.WindowHandles;
                 driver.SwitchTo().Window(windowHandles[1]);
                 try
                 {
-                    // Değerlendirme bağlantısını bulun ve tıklayın
                     Thread.Sleep(1000);
                     IWebElement rating =driver.FindElement(By.ClassName("rvw-cnt-tx"));
                     Thread.Sleep(1000);
                     rating.Click();
 
-                    // Yorumları çekin
                     var elements = driver.FindElements(By.ClassName("comment-text"));
 
                     Product uruns = new Product
@@ -109,18 +62,25 @@ class Program
                         uruns.Comment.Add(new Comment { CommentText = element.Text });
                     }
                     urunler.Add(uruns);
+                    count++;
                 }
                 catch (NoSuchElementException)
                 {
                     Console.WriteLine("Değerlendirme bağlantısı bulunamadı.");
                 }
 
-                // Yeni pencereyi kapatın ve eski pencereye geri dönün
                 driver.Close();
                 driver.SwitchTo().Window(originalWindow);
             }
-          
-        
+
+            foreach (var i in urunler)
+            {
+                foreach(var element in i.Comment)
+                {
+                    Console.WriteLine($"ürün:{i.ProductName} ---- yorum: {element.CommentText}");
+                }
+            }
+
         }
         Console.ReadLine();
     }
