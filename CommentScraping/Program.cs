@@ -12,7 +12,8 @@ class Program
         // ChromeDriver için tarayıcı seçeneklerini ayarlayın
         var options = new ChromeOptions();
         //options.AddArgument("--headless");
-
+        //var categories = new TrendyolRequest();
+        //var categoryList = categories.GetCategories().Result;
 
         Console.WriteLine("Ürün ismi giriniz....");
         string seacrWord = Console.ReadLine();
@@ -25,13 +26,13 @@ class Program
             Thread.Sleep(1000);
             searchInput.SendKeys(Keys.Enter);
            
-            var productLink = driver.FindElements(By.CssSelector("div.p-card-wrppr a")).Take(5).ToList();
+            var productLink = driver.FindElements(By.CssSelector("div.p-card-wrppr ")).Take(1).ToList();
             List<Product> urunler = new List<Product>();
             WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
             var count = 0;
             foreach ( var product in productLink)
             {
-
+                var ProductId = product.GetAttribute("data-id");
                 string originalWindow = driver.CurrentWindowHandle;
                 try
                 {
@@ -48,6 +49,21 @@ class Program
                 try
                 {
                     Thread.Sleep(1000);
+                    var ProductBrand = driver.FindElement(By.CssSelector("a.product-brand-name-with-link")).Text;
+                    var ProductName = driver.FindElement(By.CssSelector("h1.pr-new-br span")).Text;
+                    var ProductRating = driver.FindElement(By.CssSelector("div.rating-line-count")).Text;
+                    var ProductPrice = driver.FindElement(By.CssSelector("span.prc-dsc")).Text;
+                    var ProductImage = driver.FindElement(By.CssSelector("div.base-product-image img")).GetAttribute("src");
+                    var ProductProperties = driver.FindElements(By.ClassName("attribute-item"));
+                    Dictionary<string,string> properties = new Dictionary<string,string>();
+                    foreach (var item in ProductProperties)
+                    {
+                        var attributeNameElement = item.FindElement(By.CssSelector(".attribute-label.attr-name"));
+                        string attributeName = attributeNameElement.Text;
+                        var attributeValueElement = item.FindElement(By.CssSelector(".attribute-value .attr-name.attr-name-w"));
+                        string attributeValue = attributeValueElement.Text;
+                        properties.Add(attributeName, attributeValue);
+                    }
                     IWebElement rating =driver.FindElement(By.ClassName("rvw-cnt-tx"));
                     Thread.Sleep(1000);
                     rating.Click();
@@ -56,7 +72,13 @@ class Program
 
                     Product uruns = new Product
                     {
+                        ProductId  = ProductId,
+                        ProductBrand = ProductBrand,
                         ProductName = seacrWord,
+                        ProductRating = ProductRating,
+                        ProductPrice = ProductPrice,
+                        ProductImage = ProductImage,
+                        ProductProperties = properties,
                         Comment = new List<Comment>()
                     };
                     foreach (var element in elements)
