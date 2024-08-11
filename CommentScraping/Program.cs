@@ -15,6 +15,8 @@ class Program
         //var categories = new TrendyolRequest();
         //var categoryList = categories.GetCategories().Result;
 
+        var categories = new GetCategory();
+        categories.GetCategoryList();
         Console.WriteLine("Ürün ismi giriniz....");
         string seacrWord = Console.ReadLine();
         using (IWebDriver driver = new ChromeDriver(options))
@@ -23,9 +25,14 @@ class Program
             Thread.Sleep(1000);
             var searchInput = driver.FindElement(By.ClassName("V8wbcUhU"));
             searchInput.SendKeys(seacrWord);
-            Thread.Sleep(1000);
             searchInput.SendKeys(Keys.Enter);
-           
+            Thread.Sleep(1000);
+            var catName = "iPhone IOS Cep Telefonları";
+            var AllCategoriesList = driver.FindElements(By.CssSelector("div.fltr-item-text")).Where(x => x.Text == catName);
+            foreach (var cat in AllCategoriesList)
+            {
+                Console.WriteLine(cat.Text);
+            }
             var productLink = driver.FindElements(By.CssSelector("div.p-card-wrppr ")).Take(1).ToList();
             List<Product> urunler = new List<Product>();
             WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
